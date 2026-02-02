@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/rounded_corners"
+    android:padding="16dp">
+
+
+    <!-- Chat Area -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/rounded_corners"
+        android:backgroundTint="#1AFFFFFF">
+
+        <TextView
+            android:id="@+id/tv_chat_response"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text=""
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="14sp" />
+    </ScrollView>
+
+    <!-- Quick Action Menu -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none"
+        android:layout_marginBottom="8dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_build"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Build"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <Button
+                android:id="@+id/btn_tactics"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tactics"
+                android:layout_marginEnd="8dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <Button
+                android:id="@+id/btn_win_condition"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Win Condition"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Input Area -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/et_chat_input"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Ask specific question..."
+            android:background="@null"
+            android:padding="12dp"
+            android:textColor="?attr/colorOnSurface"
+            android:singleLine="true" />
+
+        <ImageButton
+            android:id="@+id/btn_chat_send"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_send"
+            android:contentDescription="Send"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            app:tint="?attr/colorPrimary" /> 
+            <!-- Using camera icon temporarily if send icon missing, or just standard send button -->
+    </LinearLayout>
+
+</LinearLayout>

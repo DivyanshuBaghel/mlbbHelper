@@ -1,0 +1,17 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="40dp"
+    android:layout_height="wrap_content"
+    android:minWidth="40dp">
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="24dp"
+        android:layout_height="100dp"
+        android:layout_gravity="center_vertical|end"
+        app:cardBackgroundColor="?attr/colorSecondaryContainer"
+        app:cardCornerRadius="6dp"
+        app:cardElevation="4dp"
+        android:clickable="false"
+        android:focusable="false"
+        android:tooltipText="Expand Overlay" />
+</FrameLayout>
