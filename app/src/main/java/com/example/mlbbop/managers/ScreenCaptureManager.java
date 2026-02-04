@@ -36,6 +36,29 @@ public class ScreenCaptureManager {
         this.projectionManager = (MediaProjectionManager) context.getSystemService(Context.MEDIA_PROJECTION_SERVICE);
     }
 
+    private void setupVirtualDisplay() {
+        if (mediaProjection == null)
+            return;
+
+        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+        int width = metrics.widthPixels;
+        int height = metrics.heightPixels;
+        int density = metrics.densityDpi;
+
+        if (imageReader == null) {
+            imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2);
+        }
+
+        if (virtualDisplay == null) {
+            Log.d(TAG, "Creating Persistent VirtualDisplay (Paused state)");
+            // Start with null surface (Paused)
+            virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCapture",
+                    width, height, density,
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
+                    null, null, null);
+        }
+    }
+
     public void startProjection(int resultCode, Intent data) {
         if (projectionManager == null)
             return;
@@ -50,35 +73,24 @@ public class ScreenCaptureManager {
                 stopProjection();
             }
         }, new Handler(Looper.getMainLooper()));
+
+        setupVirtualDisplay();
     }
 
     public void stopProjection() {
         isProjectionActive = false;
-        releaseVirtualDisplay();
+        if (virtualDisplay != null) {
+            virtualDisplay.release();
+            virtualDisplay = null;
+        }
+        if (imageReader != null) {
+            imageReader.close();
+            imageReader = null;
+        }
         if (mediaProjection != null) {
-            mediaProjection.stop(); // Note: This might be redundant if triggered by call
+            mediaProjection.stop();
             mediaProjection = null;
         }
-    }
-
-    private void createVirtualDisplay() {
-        if (mediaProjection == null)
-            return;
-
-        Log.d(TAG, "Creating VirtualDisplay (One-time capture)");
-        DisplayMetrics metrics = context.getResources().getDisplayMetrics();
-        int width = metrics.widthPixels;
-        int height = metrics.heightPixels;
-        int density = metrics.densityDpi;
-
-        if (imageReader == null) {
-            imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2);
-        }
-
-        virtualDisplay = mediaProjection.createVirtualDisplay("ScreenCapture",
-                width, height, density,
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
-                imageReader.getSurface(), null, null);
     }
 
     private final java.util.concurrent.ExecutorService backgroundExecutor = java.util.concurrent.Executors
@@ -92,11 +104,20 @@ public class ScreenCaptureManager {
 
         backgroundExecutor.execute(() -> {
             try {
-                // 1. Setup Virtual Display On-Demand
-                createVirtualDisplay();
+                // Ensure resources exist (in case of weird lifecycle kill)
+                setupVirtualDisplay();
 
-                // 2. Wait for first frame (Critical for battery optimization vs performance
-                // trade-off)
+                if (virtualDisplay == null || imageReader == null) {
+                    Log.e(TAG, "Failed to setup resources");
+                    new Handler(Looper.getMainLooper()).post(() -> callback.onScreenshotCaptured(null));
+                    return;
+                }
+
+                // 1. RESUME: Attach surface to start capturing
+                Log.d(TAG, "Resuming VirtualDisplay (Attach Surface)");
+                virtualDisplay.setSurface(imageReader.getSurface());
+
+                // 2. Wait for frame
                 try {
                     Thread.sleep(150);
                 } catch (InterruptedException ignored) {
@@ -104,13 +125,10 @@ public class ScreenCaptureManager {
 
                 // 3. Acquire Image
                 Image image = null;
-                // Quick retry loop just in case 150ms wasn't enough (rare)
                 for (int i = 0; i < 3; i++) {
-                    if (imageReader != null) {
-                        image = imageReader.acquireLatestImage();
-                        if (image != null)
-                            break;
-                    }
+                    image = imageReader.acquireLatestImage();
+                    if (image != null)
+                        break;
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException ignored) {
@@ -130,34 +148,26 @@ public class ScreenCaptureManager {
                             width + rowPadding / pixelStride, height, Bitmap.Config.ARGB_8888);
                     bitmap.copyPixelsFromBuffer(buffer);
 
-                    // Crop if necessary
                     Bitmap finalBitmap = Bitmap.createBitmap(bitmap, 0, 0, width, height);
                     image.close();
 
                     new Handler(Looper.getMainLooper()).post(() -> callback.onScreenshotCaptured(finalBitmap));
                 } else {
-                    Log.e(TAG, "Image is null after on-demand setup");
+                    Log.e(TAG, "Image is null after resume");
                     new Handler(Looper.getMainLooper()).post(() -> callback.onScreenshotCaptured(null));
                 }
+
             } catch (Exception e) {
                 Log.e(TAG, "Error capturing screenshot", e);
                 new Handler(Looper.getMainLooper()).post(() -> callback.onScreenshotCaptured(null));
             } finally {
-                // 4. Cleanup Resources Immediately
-                releaseVirtualDisplay();
+                // 4. PAUSE: Detach surface to stop capturing
+                Log.d(TAG, "Pausing VirtualDisplay (Detach Surface)");
+                if (virtualDisplay != null) {
+                    virtualDisplay.setSurface(null);
+                }
             }
         });
-    }
-
-    private void releaseVirtualDisplay() {
-        if (virtualDisplay != null) {
-            virtualDisplay.release();
-            virtualDisplay = null;
-        }
-        if (imageReader != null) {
-            imageReader.close();
-            imageReader = null;
-        }
     }
 
     public boolean isProjectionActive() {
