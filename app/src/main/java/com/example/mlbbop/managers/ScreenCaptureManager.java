@@ -50,20 +50,11 @@ public class ScreenCaptureManager {
                 stopProjection();
             }
         }, new Handler(Looper.getMainLooper()));
-
-        createVirtualDisplay();
     }
 
     public void stopProjection() {
         isProjectionActive = false;
-        if (virtualDisplay != null) {
-            virtualDisplay.release();
-            virtualDisplay = null;
-        }
-        if (imageReader != null) {
-            imageReader.close();
-            imageReader = null;
-        }
+        releaseVirtualDisplay();
         if (mediaProjection != null) {
             mediaProjection.stop(); // Note: This might be redundant if triggered by call
             mediaProjection = null;
@@ -74,6 +65,7 @@ public class ScreenCaptureManager {
         if (mediaProjection == null)
             return;
 
+        Log.d(TAG, "Creating VirtualDisplay (One-time capture)");
         DisplayMetrics metrics = context.getResources().getDisplayMetrics();
         int width = metrics.widthPixels;
         int height = metrics.heightPixels;
@@ -93,24 +85,32 @@ public class ScreenCaptureManager {
             .newSingleThreadExecutor();
 
     public void captureScreenshot(ScreenshotCallback callback) {
-        if (imageReader == null) {
-            createVirtualDisplay(); // Try to recreate
-            if (imageReader == null) {
-                callback.onScreenshotCaptured(null);
-                return;
-            }
+        if (mediaProjection == null) {
+            callback.onScreenshotCaptured(null);
+            return;
         }
 
         backgroundExecutor.execute(() -> {
             try {
-                // Wait briefly for new image if needed, or retry loop?
-                // Creating a simplified retry mechanism as acquireLatestImage might return null
-                // immediately if frame isn't ready.
+                // 1. Setup Virtual Display On-Demand
+                createVirtualDisplay();
+
+                // 2. Wait for first frame (Critical for battery optimization vs performance
+                // trade-off)
+                try {
+                    Thread.sleep(150);
+                } catch (InterruptedException ignored) {
+                }
+
+                // 3. Acquire Image
                 Image image = null;
-                for (int i = 0; i < 5; i++) {
-                    image = imageReader.acquireLatestImage();
-                    if (image != null)
-                        break;
+                // Quick retry loop just in case 150ms wasn't enough (rare)
+                for (int i = 0; i < 3; i++) {
+                    if (imageReader != null) {
+                        image = imageReader.acquireLatestImage();
+                        if (image != null)
+                            break;
+                    }
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException ignored) {
@@ -136,14 +136,28 @@ public class ScreenCaptureManager {
 
                     new Handler(Looper.getMainLooper()).post(() -> callback.onScreenshotCaptured(finalBitmap));
                 } else {
-                    Log.e(TAG, "Image is null after retries");
+                    Log.e(TAG, "Image is null after on-demand setup");
                     new Handler(Looper.getMainLooper()).post(() -> callback.onScreenshotCaptured(null));
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error capturing screenshot", e);
                 new Handler(Looper.getMainLooper()).post(() -> callback.onScreenshotCaptured(null));
+            } finally {
+                // 4. Cleanup Resources Immediately
+                releaseVirtualDisplay();
             }
         });
+    }
+
+    private void releaseVirtualDisplay() {
+        if (virtualDisplay != null) {
+            virtualDisplay.release();
+            virtualDisplay = null;
+        }
+        if (imageReader != null) {
+            imageReader.close();
+            imageReader = null;
+        }
     }
 
     public boolean isProjectionActive() {
