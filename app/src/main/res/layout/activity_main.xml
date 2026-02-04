@@ -7,30 +7,75 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <ImageButton
-        android:id="@+id/btn_launch_mlbb"
-        android:layout_width="128dp"
-        android:layout_height="128dp"
-        android:src="@drawable/ic_mlbb_launcher"
-        android:scaleType="centerCrop"
-        android:background="#00000000"
-        android:contentDescription="Launch Mobile Legends"
+    <LinearLayout
+        android:id="@+id/container_buttons"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent="0.9">
 
-    <TextView
-        android:id="@+id/tv_launcher_desc"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Tap to Launch MLBB &amp; Start Overlay"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="14sp"
-        app:layout_constraintEnd_toEndOf="@+id/btn_launch_mlbb"
-        app:layout_constraintStart_toStartOf="@+id/btn_launch_mlbb"
-        app:layout_constraintTop_toBottomOf="@+id/btn_launch_mlbb" />
+        <!-- Launch Game Item -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/btn_launch_mlbb"
+                android:layout_width="128dp"
+                android:layout_height="128dp"
+                android:src="@drawable/ic_mlbb_launcher"
+                android:scaleType="centerCrop"
+                android:background="#00000000"
+                android:contentDescription="Launch Mobile Legends" />
+
+            <TextView
+                android:id="@+id/tv_launcher_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Launch MLBB &amp; Overlay"
+                android:gravity="center"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+        <!-- Start Overlay Only Item -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <ImageButton
+                android:id="@+id/btn_start_overlay_only"
+                android:layout_width="128dp"
+                android:layout_height="128dp"
+                android:src="@mipmap/ic_launcher"
+                android:scaleType="fitCenter"
+                android:background="#00000000"
+                android:contentDescription="Start Overlay Only" />
+
+            <TextView
+                android:id="@+id/tv_overlay_only_desc"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Start Overlay Only"
+                android:gravity="center"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab_settings"

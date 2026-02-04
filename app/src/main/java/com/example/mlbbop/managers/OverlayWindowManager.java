@@ -31,7 +31,9 @@ public class OverlayWindowManager {
 
     // References to active UI elements in expanded view
     private ImageView resultImageView;
-    private android.widget.ProgressBar progressBar;
+    private View progressContainer;
+    private android.widget.ProgressBar pbUpload;
+    private android.widget.ProgressBar pbReceive;
 
     public OverlayWindowManager(Context context, WindowManager windowManager, OverlayActionListener listener) {
         // Wrap context to ensure Material 3 theme application
@@ -194,7 +196,9 @@ public class OverlayWindowManager {
                 View btnSave = contentView.findViewById(R.id.btn_next);
                 View btnSend = contentView.findViewById(R.id.btn_send);
                 resultImageView = contentView.findViewById(R.id.img_result);
-                progressBar = contentView.findViewById(R.id.progress_bar);
+                progressContainer = contentView.findViewById(R.id.progress_container);
+                pbUpload = contentView.findViewById(R.id.pb_upload);
+                pbReceive = contentView.findViewById(R.id.pb_receive);
 
                 // Restore cached bitmap if available
                 if (cachedBitmap != null && resultImageView != null) {
@@ -219,13 +223,135 @@ public class OverlayWindowManager {
                 }
             } else if (layoutId == R.layout.view_overlay_data) {
                 resultImageView = null;
-                progressBar = null;
+                progressContainer = null;
                 setupDataView(contentView);
+            } else if (layoutId == R.layout.view_overlay_settings) {
+                resultImageView = null;
+                progressContainer = null;
+                setupSettingsView(contentView);
             } else {
                 resultImageView = null; // clear reference when not in home view
-                progressBar = null;
+                progressContainer = null;
             }
         }
+    }
+
+    private void setupSettingsView(View view) {
+        com.google.android.material.textfield.TextInputEditText etApiKey1 = view.findViewById(R.id.et_api_key_1);
+        com.google.android.material.textfield.TextInputEditText etApiKey2 = view.findViewById(R.id.et_api_key_2);
+        com.google.android.material.textfield.TextInputEditText etApiKey3 = view.findViewById(R.id.et_api_key_3);
+        com.google.android.material.textfield.TextInputEditText etModelName = view.findViewById(R.id.et_model_name);
+        android.widget.RadioGroup rgApiKeys = view.findViewById(R.id.rg_api_keys);
+        android.widget.RadioButton rbKey1 = view.findViewById(R.id.rb_key_1);
+        android.widget.RadioButton rbKey2 = view.findViewById(R.id.rb_key_2);
+        android.widget.RadioButton rbKey3 = view.findViewById(R.id.rb_key_3);
+        android.widget.TextView tvStatus = view.findViewById(R.id.tv_settings_status);
+        View btnSave = view.findViewById(R.id.btn_save_settings);
+        View btnHealthCheck = view.findViewById(R.id.btn_check_health);
+
+        etApiKey1.setText(SettingsManager.getApiKey(context, 1));
+        etApiKey2.setText(SettingsManager.getApiKey(context, 2));
+        etApiKey3.setText(SettingsManager.getApiKey(context, 3));
+        etModelName.setText(SettingsManager.getModelName(context));
+
+        int activeIndex = SettingsManager.getActiveKeyIndex(context);
+        if (activeIndex == 2)
+            rbKey2.setChecked(true);
+        else if (activeIndex == 3)
+            rbKey3.setChecked(true);
+        else
+            rbKey1.setChecked(true);
+
+        // Make edit texts focusable in overlay
+        View.OnTouchListener focusListener = (v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                setFocusable(true);
+            }
+            return false;
+        };
+        etApiKey1.setOnTouchListener(focusListener);
+        etApiKey2.setOnTouchListener(focusListener);
+        etApiKey3.setOnTouchListener(focusListener);
+        etModelName.setOnTouchListener(focusListener);
+
+        btnSave.setOnClickListener(v -> {
+            setFocusable(false); // Hide keyboard
+            String key1 = etApiKey1.getText().toString().trim();
+            String key2 = etApiKey2.getText().toString().trim();
+            String key3 = etApiKey3.getText().toString().trim();
+            String model = etModelName.getText().toString().trim();
+
+            SettingsManager.saveApiKey(context, 1, key1);
+            SettingsManager.saveApiKey(context, 2, key2);
+            SettingsManager.saveApiKey(context, 3, key3);
+
+            if (!model.isEmpty()) {
+                SettingsManager.saveModelName(context, model);
+            }
+
+            int newIndex = 1;
+            if (rbKey2.isChecked())
+                newIndex = 2;
+            else if (rbKey3.isChecked())
+                newIndex = 3;
+            SettingsManager.saveActiveKeyIndex(context, newIndex);
+
+            tvStatus.setText("Settings saved!");
+            Toast.makeText(context, "Settings Saved!", Toast.LENGTH_SHORT).show();
+        });
+
+        btnHealthCheck.setOnClickListener(v -> {
+            setFocusable(false);
+            tvStatus.setText("Checking API Health...");
+
+            String activeKey = "";
+            if (rbKey1.isChecked())
+                activeKey = etApiKey1.getText().toString().trim();
+            else if (rbKey2.isChecked())
+                activeKey = etApiKey2.getText().toString().trim();
+            else if (rbKey3.isChecked())
+                activeKey = etApiKey3.getText().toString().trim();
+
+            String model = etModelName.getText().toString().trim();
+            if (model.isEmpty())
+                model = "gemini-2.5-flash";
+
+            if (activeKey.isEmpty()) {
+                tvStatus.setText("Error: Key is empty.");
+                return;
+            }
+
+            com.google.ai.client.generativeai.GenerativeModel gm = new com.google.ai.client.generativeai.GenerativeModel(
+                    model, activeKey);
+            com.google.ai.client.generativeai.java.GenerativeModelFutures modelFutures = com.google.ai.client.generativeai.java.GenerativeModelFutures
+                    .from(gm);
+
+            com.google.ai.client.generativeai.type.Content content = new com.google.ai.client.generativeai.type.Content.Builder()
+                    .addText("Ping")
+                    .build();
+
+            com.google.common.util.concurrent.ListenableFuture<com.google.ai.client.generativeai.type.GenerateContentResponse> response = modelFutures
+                    .generateContent(content);
+
+            com.google.common.util.concurrent.Futures.addCallback(response,
+                    new com.google.common.util.concurrent.FutureCallback<com.google.ai.client.generativeai.type.GenerateContentResponse>() {
+                        @Override
+                        public void onSuccess(com.google.ai.client.generativeai.type.GenerateContentResponse result) {
+                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                                tvStatus.setText("Health Check Passed!");
+                                Toast.makeText(context, "API is Healthy", Toast.LENGTH_SHORT).show();
+                            });
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+                            new android.os.Handler(android.os.Looper.getMainLooper()).post(() -> {
+                                tvStatus.setText("Failed: " + t.getMessage());
+                                Toast.makeText(context, "API Error", Toast.LENGTH_LONG).show();
+                            });
+                        }
+                    }, java.util.concurrent.Executors.newSingleThreadExecutor());
+        });
     }
 
     public void setFocusable(boolean focusable) {
@@ -330,21 +456,35 @@ public class OverlayWindowManager {
     }
 
     public void showLoading() {
-        if (progressBar != null) {
-            progressBar.setVisibility(View.VISIBLE);
+        if (progressContainer != null) {
+            progressContainer.setVisibility(View.VISIBLE);
         }
-        if (resultImageView != null) {
-            // resultImageView.setVisibility(View.INVISIBLE); // Optional: Hide image while
-            // loading? Maybe just show over it or replacing it.
-            // User asked "between", implying both might be visible or it's a layout
-            // position.
-            // Let's just show the bar.
+        // Stage 1: Uploading
+        if (pbUpload != null) {
+            pbUpload.setIndeterminate(true);
+            pbUpload.setVisibility(View.VISIBLE);
+        }
+        if (pbReceive != null) {
+            // Wait for upload to finish
+            pbReceive.setIndeterminate(false);
+            pbReceive.setProgress(0);
+        }
+    }
+
+    public void onUploadComplete() {
+        // Stage 2: Receiving
+        if (pbUpload != null) {
+            pbUpload.setIndeterminate(false);
+            pbUpload.setProgress(100);
+        }
+        if (pbReceive != null) {
+            pbReceive.setIndeterminate(true);
         }
     }
 
     public void hideLoading() {
-        if (progressBar != null) {
-            progressBar.setVisibility(View.GONE);
+        if (progressContainer != null) {
+            progressContainer.setVisibility(View.GONE);
         }
     }
 

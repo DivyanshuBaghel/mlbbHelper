@@ -117,7 +117,10 @@ public class MlbbOverlayService extends Service implements OverlayActionListener
         overlayManager.resetDataCache();
         overlayManager.showLoading();
         // Fake progress
+        // Fake progress for upload visualization
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            overlayManager.onUploadComplete(); // Visually switch to "Receiving" phase
+
             geminiHelper.startNewSession(currentScreenshot, new GeminiHelper.GeminiCallback() {
                 @Override
                 public void onSuccess(String response) {

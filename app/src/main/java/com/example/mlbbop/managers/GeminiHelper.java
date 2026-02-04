@@ -44,14 +44,15 @@ public class GeminiHelper {
             "    If I ask a manual question that requires info not in the image (like \"Best build for next patch?\"), answer based on your general MLBB knowledge but prioritize the current match context first.";
 
     public GeminiHelper(android.content.Context context) {
-        String storedKey = SettingsManager.getApiKey(context);
-        String key = (storedKey != null && !storedKey.isEmpty()) ? storedKey : API_KEY;
+        String key = SettingsManager.getActiveApiKey(context);
+        String safeKey = (key != null && !key.isEmpty()) ? key : API_KEY;
 
-        if (key == null || key.isEmpty()) {
+        if (safeKey == null || safeKey.isEmpty()) {
             Log.e(TAG, "API Key is missing! Please set it in Settings.");
         }
 
-        GenerativeModel gm = new GenerativeModel("gemini-2.5-flash", key != null ? key : "");
+        String modelName = SettingsManager.getModelName(context);
+        GenerativeModel gm = new GenerativeModel(modelName, safeKey != null ? safeKey : "");
         model = GenerativeModelFutures.from(gm);
     }
 

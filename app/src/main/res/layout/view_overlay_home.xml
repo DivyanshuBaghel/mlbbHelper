@@ -17,16 +17,71 @@
         android:contentDescription="Screenshot Result"
         android:background="@drawable/rounded_corners"/>
 
-    <!-- Loading Bar -->
-    <ProgressBar
-        android:id="@+id/progress_bar"
-        style="?android:attr/progressBarStyleHorizontal"
+    <!-- Loading Bar Container -->
+    <LinearLayout
+        android:id="@+id/progress_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginVertical="4dp"
-        android:indeterminate="true"
-        android:visibility="gone" />
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="4dp"
+        android:gravity="center_vertical"
+        android:weightSum="2">
+
+        <!-- Upload Part -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Uploading Image"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="12sp"
+                android:layout_marginBottom="2dp"/>
+                
+            <ProgressBar
+                android:id="@+id/pb_upload"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:indeterminate="true" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="16dp"
+            android:layout_height="1dp" />
+
+        <!-- Receive Part -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gemini Analysis"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="12sp"
+                android:layout_marginBottom="2dp"/>
+
+            <ProgressBar
+                android:id="@+id/pb_receive"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:indeterminate="true" />
+        </LinearLayout>
+
+    </LinearLayout>
 
     <!-- Bottom Controls -->
     <LinearLayout

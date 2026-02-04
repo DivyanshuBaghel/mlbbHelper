@@ -53,6 +53,28 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(this, SettingsActivity.class));
         });
 
+        // Setup Start Overlay Only Button
+        ImageButton startOverlayOnlyBtn = findViewById(R.id.btn_start_overlay_only);
+        startOverlayOnlyBtn.setOnClickListener(v -> {
+            android.util.Log.d("MainActivity", "Start Overlay Only button clicked");
+            Toast.makeText(this, "Requesting Overlay...", Toast.LENGTH_SHORT).show();
+            pendingGameIntent = null; // No game to launch
+
+            if (checkOverlayPermission()) {
+                android.util.Log.d("MainActivity", "Overlay Permission granted");
+                if (MlbbOverlayService.isProjectionActive) {
+                    android.util.Log.d("MainActivity", "Projection active, starting service directly");
+                    startOverlayService(0, null); // Ensure overlay is visible
+                    finish();
+                } else {
+                    android.util.Log.d("MainActivity", "Requesting Media Projection");
+                    startMediaProjectionRequest();
+                }
+            } else {
+                android.util.Log.d("MainActivity", "Overlay Permission NOT granted, requesting...");
+            }
+        });
+
         ImageButton launchBtn = findViewById(R.id.btn_launch_mlbb);
         String[] packages = {
                 "com.mobile.legends", // Global
@@ -92,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
         // Fallback: No app found
         launchBtn.setOnClickListener(v -> {
         });
+
     }
 
     private boolean checkOverlayPermission() {
