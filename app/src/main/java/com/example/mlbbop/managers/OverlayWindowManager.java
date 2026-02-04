@@ -379,12 +379,12 @@ public class OverlayWindowManager {
         }
     }
 
+    private android.widget.LinearLayout quickActionContainer;
+
     private void setupDataView(View view) {
         android.widget.EditText etInput = view.findViewById(R.id.et_chat_input);
         View btnSend = view.findViewById(R.id.btn_chat_send);
-        View btnBuild = view.findViewById(R.id.btn_build);
-        View btnTactics = view.findViewById(R.id.btn_tactics);
-        View btnWin = view.findViewById(R.id.btn_win_condition);
+        quickActionContainer = view.findViewById(R.id.quick_action_container);
 
         android.widget.TextView tvChat = view.findViewById(R.id.tv_chat_response);
         if (tvChat != null && !cachedChatHistory.isEmpty()) {
@@ -410,15 +410,38 @@ public class OverlayWindowManager {
             });
         }
 
-        View.OnClickListener quickAction = v -> listener
-                .onChatRequest(((android.widget.Button) v).getText().toString());
-        if (btnBuild != null)
-            btnBuild.setOnClickListener(quickAction);
-        if (btnTactics != null)
-            btnTactics.setOnClickListener(quickAction);
-        if (btnWin != null)
-            btnWin.setOnClickListener(quickAction);
+        // Restore buttons if we have a way to cache them, or just let them be empty
+        // until next interaction
+        // For now, initially empty or we could cache the last set of options.
+    }
 
+    public void updateQuickActions(java.util.List<String> options) {
+        if (quickActionContainer == null)
+            return;
+
+        quickActionContainer.removeAllViews();
+
+        if (options == null || options.isEmpty()) {
+            ((View) quickActionContainer.getParent()).setVisibility(View.GONE);
+            return;
+        }
+
+        ((View) quickActionContainer.getParent()).setVisibility(View.VISIBLE);
+
+        for (String option : options) {
+            android.widget.Button btn = new android.widget.Button(new android.view.ContextThemeWrapper(context,
+                    com.google.android.material.R.style.Widget_Material3_Button_OutlinedButton));
+            btn.setText(option);
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                    android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            params.setMarginEnd(16); // 8dp approx
+            btn.setLayoutParams(params);
+
+            btn.setOnClickListener(v -> listener.onChatRequest(option));
+
+            quickActionContainer.addView(btn);
+        }
     }
 
     public void appendChatMessage(String message) {
@@ -434,10 +457,10 @@ public class OverlayWindowManager {
             String newValue = cachedChatHistory + spacer + message;
             tvChat.setText(TextWithImageHelper.getSpannedText(context, newValue));
             cachedChatHistory = newValue;
-            // Scroll to bottom (simple implementation)
+            // Scroll to bottom (with post to ensure layout is complete)
             View scrollView = (View) tvChat.getParent();
             if (scrollView instanceof android.widget.ScrollView) {
-                ((android.widget.ScrollView) scrollView).fullScroll(View.FOCUS_DOWN);
+                scrollView.post(() -> ((android.widget.ScrollView) scrollView).fullScroll(View.FOCUS_DOWN));
             }
         }
     }

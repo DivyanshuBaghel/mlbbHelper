@@ -127,13 +127,28 @@ public class MlbbOverlayService extends Service implements OverlayActionListener
                     new Handler(Looper.getMainLooper()).post(() -> {
                         overlayManager.hideLoading();
                         overlayManager.switchContent(R.layout.view_overlay_data);
-                        overlayManager.appendChatMessage("Gemini: " + response);
-                        // Parse response to find hero list if possible, or just dump it.
-                        // "Step A (Detection): Upon image upload, list the 10 hero names."
-                        // We can simple-mindedly set the first line or so to the hero list text view.
-                        // For now, let's just put it all in chat or try to split.
-                        // Ideally, we'd parse.
 
+                        // Parse options
+                        java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[OPTIONS:(.*?)\\]");
+                        java.util.regex.Matcher matcher = pattern.matcher(response);
+
+                        String cleanResponse = response;
+                        java.util.List<String> options = new java.util.ArrayList<>();
+
+                        if (matcher.find()) {
+                            String optionsStr = matcher.group(1);
+                            if (optionsStr != null) {
+                                String[] rawOptions = optionsStr.split("\\|");
+                                for (String opt : rawOptions) {
+                                    options.add(opt.trim());
+                                }
+                            }
+                            // Remove the tag from display logic
+                            cleanResponse = matcher.replaceAll("").trim();
+                        }
+
+                        overlayManager.appendChatMessage("Gemini: " + cleanResponse);
+                        overlayManager.updateQuickActions(options);
                     });
                 }
 
@@ -156,11 +171,34 @@ public class MlbbOverlayService extends Service implements OverlayActionListener
                                                             // service redundancy is fine.
         // Actually UI handles optimistic update.
 
+        // Clear previous options when new request is sent
+        overlayManager.updateQuickActions(new java.util.ArrayList<>());
+
         geminiHelper.sendMessage(message, new GeminiHelper.GeminiCallback() {
             @Override
             public void onSuccess(String response) {
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    overlayManager.appendChatMessage("Gemini: " + response);
+                    // Parse options
+                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\[OPTIONS:(.*?)\\]");
+                    java.util.regex.Matcher matcher = pattern.matcher(response);
+
+                    String cleanResponse = response;
+                    java.util.List<String> options = new java.util.ArrayList<>();
+
+                    if (matcher.find()) {
+                        String optionsStr = matcher.group(1);
+                        if (optionsStr != null) {
+                            String[] rawOptions = optionsStr.split("\\|");
+                            for (String opt : rawOptions) {
+                                options.add(opt.trim());
+                            }
+                        }
+                        // Remove the tag from display logic
+                        cleanResponse = matcher.replaceAll("").trim();
+                    }
+
+                    overlayManager.appendChatMessage("Gemini: " + cleanResponse);
+                    overlayManager.updateQuickActions(options);
                 });
             }
 

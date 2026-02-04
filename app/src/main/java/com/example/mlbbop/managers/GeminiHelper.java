@@ -32,16 +32,17 @@ public class GeminiHelper {
             "    Active Match: Maintain context of the current image and my hero until the next image is sent.\n" +
             "\n" +
             "2. Step-by-Step Execution:\n" +
-            "    Step A (Detection): Upon image upload, list the 10 hero names.\n" +
-            "    Step B (The Menu): After I identify my hero, provide three \"Two-Word\" quick-action questions (Build, Tactics, Win Condition).\n"
+            "    Step A (Detection): Upon image upload, list the 10 hero names. CRITICAL: Also provide these names as options so I can select one. Format: `[OPTIONS: Hero1 | Hero2 | ...]`\n"
             +
-            "    Step C (Flexible Input): After providing the menu, wait for my input. I will either:\n" +
-            "        Tap/Select one of your suggested two-word questions.\n" +
-            "        Manually type a custom, specific question regarding the match.\n" +
+            "    Step B (The Menu): After I identify my hero (or if I just ask for general help), provide actionable next steps as \"Options\" (e.g., Build | Tactics | Win Condition).\n"
+            +
+            "    CRITICAL: You must provide these options in a strict format at the end of your response: `[OPTIONS: Option 1 | Option 2 | Option 3]`.\n"
+            +
+            "    Example: `...analysis complete. [OPTIONS: Build Info | Tactics | Win Condition]`\n" +
+            "    If no specific options are relevant, do not output the tag.\n" +
             "\n" +
-            "3. Response Style: > * Whether I use a suggested question or a manual one, keep your analysis concise, data-driven, and focused on the screenshot's stats (Items, Gold, KDA).\n"
-            +
-            "    If I ask a manual question that requires info not in the image (like \"Best build for next patch?\"), answer based on your general MLBB knowledge but prioritize the current match context first.";
+            "3. Response Style: > * Keep analysis hard-hitting, concise, and data-driven.\n" +
+            "    If I click an option, I will send you that exact text. Respond specifically to it.";
 
     public GeminiHelper(android.content.Context context) {
         String key = SettingsManager.getActiveApiKey(context);

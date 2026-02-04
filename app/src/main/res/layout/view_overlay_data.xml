@@ -35,32 +35,12 @@
         android:layout_marginBottom="8dp">
 
         <LinearLayout
+            android:id="@+id/quick_action_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/btn_build"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Build"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
-
-            <Button
-                android:id="@+id/btn_tactics"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tactics"
-                android:layout_marginEnd="8dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
-
-            <Button
-                android:id="@+id/btn_win_condition"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Win Condition"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+            <!-- Buttons will be added dynamically -->
         </LinearLayout>
     </HorizontalScrollView>
 
